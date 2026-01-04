@@ -1,90 +1,62 @@
-// Simple in-memory storage
-const tempUsers = {};
-
-function getUser(userId) {
-  if (!tempUsers[userId]) tempUsers[userId] = { coins: 0, daily: 0 };
-  return tempUsers[userId];
-}
-
-function addCoins(userId, amount) {
-  const user = getUser(userId);
-  user.coins += amount;
-}
-
-function setDaily(userId) {
-  const user = getUser(userId);
-  user.daily = Date.now();
-}
-
 module.exports = {
   config: {
-    name: "daily",
+    name: "slot",
+    aliases: ["slots"],
     version: "1.0",
     author: "Rai Watanabe",
     role: 0,
-    shortDescription: "Claim daily coins",
-    category: "economy"
+    shortDescription: "Play the ultra flashy slot machine",
+    category: "gambling",
+    guide: "{pn} <bet>"
   },
 
-  onStart: async function({ api, event, Users }) {
-    try {
-      const userId = event.senderID;
-      let user;
-      
-      // Try using Users database first
-      if (Users && Users.getData && Users.addCoins && Users.setData) {
-        user = await Users.getData(userId);
-      } else {
-        // Fallback to temp storage
-        user = getUser(userId);
-      }
+  onStart: async function ({ api, event, args }) {
+    const prefix = global.GoatBot.config.prefix;
+    const bet = parseInt(args[0]);
 
-      const now = Date.now();
-      const lastClaim = user.daily || 0;
-      const cooldown = 24 * 60 * 60 * 1000;
+    // Validate bet
+    if (!bet || bet <= 0)
+      return api.sendMessage(
+        `❌ Please enter a valid bet amount.\nUsage: ${prefix}slot <bet>`,
+        event.threadID
+      );
 
-      if (now - lastClaim < cooldown) {
-        return api.sendMessage(
+    // Slot symbols
+    const symbols = ["🍒","🍋","🍉","🍇","⭐","💎"];
+    const spin = [
+      symbols[Math.floor(Math.random() * symbols.length)],
+      symbols[Math.floor(Math.random() * symbols.length)],
+      symbols[Math.floor(Math.random() * symbols.length)]
+    ];
+
+    // Determine result
+    let resultText = "";
+    let winnings = 0;
+
+    if (spin[0] === spin[1] && spin[1] === spin[2]) {
+      winnings = bet * 5;
+      resultText = `💥 JACKPOT! You won ${winnings} coins! 💥`;
+    } else if (spin[0] === spin[1] || spin[1] === spin[2] || spin[0] === spin[2]) {
+      winnings = bet * 2;
+      resultText = `✨ Nice! You won ${winnings} coins! ✨`;
+    } else {
+      winnings = 0;
+      resultText = `😢 Better luck next time! You lost ${bet} coins.`;
+    }
+
+    // Build message in ULTRA DESIGN
+    const msg =
 `╭═══════════════════⭓
-│ ❌ DAILY ALREADY CLAIMED
+│ 🎰 𝗕𝗛𝗣𝗛 ULTRA SLOT 🎰
 │
-│ 💎 Come back later to claim again!
+│ ${spin.join(" │ ")}
 │
-│ 👑 Credits: Rai Watanabe
-╰═══════════════════⭓`, event.threadID
-        );
-      }
-
-      const coins = 500;
-      
-      // Add coins
-      if (Users && Users.addCoins && Users.setData) {
-        await Users.addCoins(userId, coins);
-        await Users.setData(userId, { daily: now });
-      } else {
-        addCoins(userId, coins);
-        setDaily(userId);
-      }
-
-      // ULTRA BOX message
-      const msg =
-`╭═══════════════════⭓
-│ ✨ DAILY BONUS ✨
-│
-│ 🎁 You claimed **${coins} coins** today!
-│ 💎 Come back tomorrow for more!
+│ ${resultText}
 │
 │ 👑 Credits: Rai Watanabe
 ╰═══════════════════⭓`;
 
-      return api.sendMessage(msg, event.threadID);
-
-    } catch (err) {
-      console.log(err);
-      return api.sendMessage(
-        `❌ Something went wrong while claiming daily coins.`,
-        event.threadID
-      );
-    }
+    api.sendMessage(msg, event.threadID);
   }
+};  }
 };
