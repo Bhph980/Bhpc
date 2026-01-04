@@ -5,7 +5,7 @@ module.exports = {
     version: "3.1",
     author: "sylus",
     shortDescription: "VIP system with item-based passive income",
-    category: "VIP",
+    category: "ECONOMY",
     guide:
       "{pn} → unlock VIP\n" +
       "{pn} shop → VIP shop\n" +
