@@ -57,3 +57,5 @@ module.exports = {
       `💰 𝖭𝖤𝖶 𝖡𝖠𝖫𝖠𝖭𝖢𝖤: ${amount}`,
       event.threadID
     );
+  }
+};
