@@ -1,46 +1,33 @@
 module.exports = {
-	config: {
-		name: "balance",
-		aliases: ["bal"],
-		version: "1.2",
-		author: "NTKhang",
-		countDown: 5,
-		role: 0,
-		description: {
-			vi: "xem số tiền hiện có của bạn hoặc người được tag",
-			en: "view your money or the money of the tagged person"
-		},
-		category: "economy",
-		guide: {
-			vi: "   {pn}: xem số tiền của bạn"
-				+ "\n   {pn} <@tag>: xem số tiền của người được tag",
-			en: "   {pn}: view your money"
-				+ "\n   {pn} <@tag>: view the money of the tagged person"
-		}
-	},
+  config: {
+    name: "balance",
+    aliases: ["bal", "wallet"],
+    version: "1.1",
+    author: "Rai Watanabe",
+    category: "economy",
+    description: "Check wallet balance"
+  },
 
-	langs: {
-		vi: {
-			money: "Bạn đang có %1$",
-			moneyOf: "%1 đang có %2$"
-		},
-		en: {
-			money: "You have %1$",
-			moneyOf: "%1 has %2$"
-		}
-	},
+  onStart: async ({ message, event, usersData }) => {
+    const uid = event.senderID;
+    if (!uid) return;
 
-	onStart: async function ({ message, usersData, event, getLang }) {
-		if (Object.keys(event.mentions).length > 0) {
-			const uids = Object.keys(event.mentions);
-			let msg = "";
-			for (const uid of uids) {
-				const userMoney = await usersData.get(uid, "money");
-				msg += getLang("moneyOf", event.mentions[uid].replace("@", ""), userMoney) + '\n';
-			}
-			return message.reply(msg);
-		}
-		const userData = await usersData.get(event.senderID);
-		message.reply(getLang("money", userData.money));
-	}
+    const money = await usersData.get(uid, "data.money") || 0;
+
+    return message.reply(
+`╔══════════════════════════════════════════════╗
+║ 💰✨  E C O N O M Y   P R O F I L E  ✨💰     ║
+╠══════════════════════════════════════════════╣
+║ 👤 User        : ${event.senderID}           ║
+║ 🆔 UID         : ${uid}                      ║
+║                                              ║
+║ 💵 Wallet      : ${money} 🪙 Coins           ║
+║ 🏦 Bank        : 0 🪙 Coins                  ║
+║                                              ║
+║ 📊 Total Worth : ${money} 🪙 Coins           ║
+╠══════════════════════════════════════════════╣
+║ 🧭 Commands    : /daily • /work • /bank     ║
+╚══════════════════════════════════════════════╝`
+    );
+  }
 };
