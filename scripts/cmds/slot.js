@@ -1,62 +1,66 @@
-module.exports = {
-  config: {
-    name: "slot",
-    aliases: ["slots"],
-    version: "1.0",
-    author: "Rai Watanabe",
-    role: 0,
-    shortDescription: "Play the ultra flashy slot machine",
-    category: "gambling",
-    guide: "{pn} <bet>"
-  },
+const fs = require("fs");
+const path = __dirname + "/users.json";
 
-  onStart: async function ({ api, event, args }) {
-    const prefix = global.GoatBot.config.prefix;
-    const bet = parseInt(args[0]);
+module.exports.config = {
+  name: "slot",
+  version: "2.0.0",
+  hasPermssion: 0,
+  credits: "Kazuki",
+  description: "Casino slot betting system",
+  commandCategory: "game",
+  usages: "/slot [bet]",
+  cooldowns: 5
+};
 
-    // Validate bet
-    if (!bet || bet <= 0)
-      return api.sendMessage(
-        `❌ Please enter a valid bet amount.\nUsage: ${prefix}slot <bet>`,
-        event.threadID
-      );
+module.exports.run = async function({ api, event, args }) {
+  const symbols = ["🍒", "🍋", "🍉", "💎", "⭐"];
 
-    // Slot symbols
-    const symbols = ["🍒","🍋","🍉","🍇","⭐","💎"];
-    const spin = [
-      symbols[Math.floor(Math.random() * symbols.length)],
-      symbols[Math.floor(Math.random() * symbols.length)],
-      symbols[Math.floor(Math.random() * symbols.length)]
-    ];
+  let users = JSON.parse(fs.readFileSync(path));
+  let userID = event.senderID;
 
-    // Determine result
-    let resultText = "";
-    let winnings = 0;
+  if (!users[userID]) users[userID] = { money: 1000 };
 
-    if (spin[0] === spin[1] && spin[1] === spin[2]) {
-      winnings = bet * 5;
-      resultText = `💥 JACKPOT! You won ${winnings} coins! 💥`;
-    } else if (spin[0] === spin[1] || spin[1] === spin[2] || spin[0] === spin[2]) {
-      winnings = bet * 2;
-      resultText = `✨ Nice! You won ${winnings} coins! ✨`;
-    } else {
-      winnings = 0;
-      resultText = `😢 Better luck next time! You lost ${bet} coins.`;
-    }
+  let bet = parseInt(args[0]) || 0;
 
-    // Build message in ULTRA DESIGN
-    const msg =
-`╭═══════════════════⭓
-│ 🎰 𝗕𝗛𝗣𝗛 ULTRA SLOT 🎰
-│
-│ ${spin.join(" │ ")}
-│
-│ ${resultText}
-│
-│ 👑 Credits: Rai Watanabe
-╰═══════════════════⭓`;
+  if (bet < 0) return api.sendMessage("Invalid bet amount!", event.threadID);
 
-    api.sendMessage(msg, event.threadID);
+  if (users[userID].money < bet)
+    return api.sendMessage("❌ Not enough balance!", event.threadID);
+
+  let spin = [
+    symbols[Math.floor(Math.random() * symbols.length)],
+    symbols[Math.floor(Math.random() * symbols.length)],
+    symbols[Math.floor(Math.random() * symbols.length)]
+  ];
+
+  let reward = 0;
+  let resultText = "❌ You lost your bet.";
+
+  if (spin[0] === spin[1] && spin[1] === spin[2]) {
+    reward = bet * 2;
+    users[userID].money += reward;
+    resultText = `🎉 JACKPOT! You won ${reward}$`;
+  } else {
+    users[userID].money -= bet;
   }
-};  }
+
+  fs.writeFileSync(path, JSON.stringify(users, null, 2));
+
+  let message = `
+╭━━━━━━━━━━━━━━━━━━╮
+        🎰 𝗦𝗟𝗢𝗧 𝗠𝗔𝗖𝗛𝗜𝗡𝗘 🎰
+╰━━━━━━━━━━━━━━━━━━╯
+
+        ╔═══〔 🎲 〕═══╗
+          ${spin.join(" │ ")}
+        ╚══════════════╝
+
+${resultText}
+
+━━━━━━━━━━━━━━━━━━━━
+💰 Balance: ${users[userID].money}$
+━━━━━━━━━━━━━━━━━━━━
+`;
+
+  return api.sendMessage(message, event.threadID, event.messageID);
 };
