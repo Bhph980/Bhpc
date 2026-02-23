@@ -1,33 +1,37 @@
-module.exports = {
-  config: {
+const fs = require("fs");
+const path = __dirname + "/../../users.json";
+
+module.exports.config = {
     name: "balance",
-    aliases: ["bal", "wallet"],
-    version: "1.1",
-    author: "Rai Watanabe",
-    category: "economy",
-    description: "Check wallet balance"
-  },
+    version: "1.0.0",
+    hasPermssion: 0,
+    credits: "Kazuki",
+    description: "Check balance"
+};
 
-  onStart: async ({ message, event, usersData }) => {
-    const uid = event.senderID;
-    if (!uid) return;
+module.exports.run = async function({ api, event }) {
 
-    const money = await usersData.get(uid, "data.money") || 0;
+    let users = JSON.parse(fs.readFileSync(path));
+    let userID = event.senderID;
 
-    return message.reply(
-`╔══════════════════════════════════════════════╗
-║ 💰✨  E C O N O M Y   P R O F I L E  ✨💰     ║
-╠══════════════════════════════════════════════╣
-║ 👤 User        : ${event.senderID}           ║
-║ 🆔 UID         : ${uid}                      ║
-║                                              ║
-║ 💵 Wallet      : ${money} 🪙 Coins           ║
-║ 🏦 Bank        : 0 🪙 Coins                  ║
-║                                              ║
-║ 📊 Total Worth : ${money} 🪙 Coins           ║
-╠══════════════════════════════════════════════╣
-║ 🧭 Commands    : /daily • /work • /bank     ║
-╚══════════════════════════════════════════════╝`
-    );
-  }
+    if (!users[userID]) users[userID] = { money: 0 };
+
+    let balance = users[userID].money;
+
+    let msg = `
+╭━━━━━━━━━━━━━━━━━━━━╮
+        💎 𝗪𝗔𝗟𝗟𝗘𝗧 𝗜𝗡𝗙𝗢 💎
+╰━━━━━━━━━━━━━━━━━━━━╯
+
+👤 Player : ${event.senderID}
+
+💰 Balance :
+➤ ${balance}$
+
+━━━━━━━━━━━━━━━━━━━━━━
+🎮 /work • 🎁 /daily • 🎰 /slot
+━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+    api.sendMessage(msg, event.threadID, event.messageID);
 };
