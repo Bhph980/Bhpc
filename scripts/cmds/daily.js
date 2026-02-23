@@ -1,33 +1,27 @@
 const fs = require("fs");
-const path = __dirname + "/../../users.json";
+const path = "users.json";
 
 module.exports.config = {
     name: "daily",
     cooldowns: 86400
 };
 
-module.exports.run = async function({ api, event }) {
+module.exports.onStart = async function({ api, event }) {
+
     let users = JSON.parse(fs.readFileSync(path));
-    let userID = event.senderID;
+    let uid = event.senderID;
 
-    if (!users[userID]) users[userID] = { money: 0 };
+    if (!users[uid]) users[uid] = { money: 0, daily: 0 };
 
-    users[userID].money += 500;
+    let now = Date.now();
 
-    fs.writeFileSync(path, JSON.stringify(users, null, 2));
+    if (now - (users[uid].daily || 0) < 86400000)
+        return api.sendMessage("❌ Daily already claimed!", event.threadID);
 
-    let msg = `
-╭━━━━━━━━━━━━━━━━━━━━╮
-        🎁 𝗗𝗔𝗜𝗟𝗬 𝗟𝗢𝗢𝗧 🎁
-╰━━━━━━━━━━━━━━━━━━━━╯
+    users[uid].money += 500;
+    users[uid].daily = now;
 
-✨ Daily reward claimed!
+    fs.writeFileSync(path, JSON.stringify(users,null,2));
 
-💰 Received:
-➤ 500$
-
-⏳ Next claim after 24 hours
-`;
-
-    api.sendMessage(msg, event.threadID, event.messageID);
+    api.sendMessage("🎁 You received 500$", event.threadID);
 };
