@@ -1,37 +1,33 @@
-module.exports = {
-  config: {
+const fs = require("fs");
+const path = __dirname + "/../../users.json";
+
+module.exports.config = {
     name: "daily",
-    version: "1.1",
-    author: "Rai Watanabe",
-    category: "economy",
-    description: "Claim daily reward",
-    cooldown: 86400
-  },
+    cooldowns: 86400
+};
 
-  onStart: async ({ message, event, usersData }) => {
-    const uid = event.senderID;
-    if (!uid) return;
+module.exports.run = async function({ api, event }) {
+    let users = JSON.parse(fs.readFileSync(path));
+    let userID = event.senderID;
 
-    const reward = 500;
-    const current = await usersData.get(uid, "data.money") || 0;
-    const total = current + reward;
+    if (!users[userID]) users[userID] = { money: 0 };
 
-    await usersData.set(uid, total, "data.money");
+    users[userID].money += 500;
 
-    return message.reply(
-`╔══════════════════════════════════════════════╗
-║ 🎁💎  D A I L Y   R E W A R D   💎🎁           ║
-╠══════════════════════════════════════════════╣
-║ 🗓️ Claim Status  : ✅ SUCCESS               ║
-║ ⏳ Cooldown      : 24 Hours                 ║
-║                                              ║
-║ 💎 Reward Earned : +${reward} 🪙 Coins      ║
-║ 💰 Wallet Now    : ${total} 🪙 Coins        ║
-║                                              ║
-║ 🔥 Keep grinding for more rewards!          ║
-╠══════════════════════════════════════════════╣
-║ ✨ Tip: Don’t miss tomorrow’s claim 🤑      ║
-╚══════════════════════════════════════════════╝`
-    );
-  }
+    fs.writeFileSync(path, JSON.stringify(users, null, 2));
+
+    let msg = `
+╭━━━━━━━━━━━━━━━━━━━━╮
+        🎁 𝗗𝗔𝗜𝗟𝗬 𝗟𝗢𝗢𝗧 🎁
+╰━━━━━━━━━━━━━━━━━━━━╯
+
+✨ Daily reward claimed!
+
+💰 Received:
+➤ 500$
+
+⏳ Next claim after 24 hours
+`;
+
+    api.sendMessage(msg, event.threadID, event.messageID);
 };
